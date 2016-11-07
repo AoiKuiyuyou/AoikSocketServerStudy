@@ -1,0 +1,134 @@
+# This notes are based on Python 3's `socketserver` library.
+# The general procedure applies to Python 2's `SocketServer` library as well.
+
+
+# ----- Main function -----
+__main__.main
+
+    # ----- Create `TCPServer` -----
+    socketserver.TCPServer.__init__
+
+        # ----- Call super constructor -----
+        socketserver.TCPServer.__init__ -> socketserver.BaseServer.__init__
+
+        # ----- Create socket -----
+        socket.socket.__init__
+
+        # ----- Call `server_bind` -----
+        socketserver.TCPServer.server_bind
+
+            # ----- Bind socket to server address
+            socket.socket.bind -> _socket.socket.bind
+
+        # ----- Call `server_activate` -----
+        socketserver.TCPServer.server_activate
+
+            # ----- Start listening -----
+            socket.socket.listen -> _socket.socket.listen
+
+    # ----- Call `serve_forever` -----
+    socketserver.TCPServer.serve_forever -> socketserver.BaseServer.serve_forever
+
+        # ----- Create selector -----
+        selectors.SelectSelector.__init__
+
+        # ----- Register socket file to selector -----
+        #
+        # Notice `TCPServer` has `fileno` method, which will be called by the
+        # selector.
+        # ```
+        # def fileno(self):
+        #     return self.socket.fileno()
+        # ```
+        #
+        selectors.SelectSelector.register
+
+        # ----- Loop to poll listening socket's read event -----
+        ```
+        # Pseudo code
+        while True:
+            ready = selector.select(timeout)
+            if ready:
+                return self._handle_request_noblock()
+        ```
+
+            # ----- Poll read event on the listening socket -----
+            #
+            # Notice only the listening socket is registered with the selector
+            # so when there is a read event it must be from the listening
+            # socket.
+            #
+            selectors.SelectSelector.select
+
+            # ----- Call `_handle_request_noblock` -----
+            # When read event occurs, it means a client is connecting.
+            socketserver.TCPServer._handle_request_noblock -> socketserver.BaseServer._handle_request_noblock
+
+                # ----- Call `get_request` -----
+                socketserver.TCPServer.get_request
+
+                    # ----- Accept client socket FD and client address -----
+                    socket.socket.accept
+
+                        # ----- Wrap client socket FD in a socket object -----
+                        socket.socket.__init__
+
+                # ----- Call `verify_request` -----
+                socketserver.TCPServer.verify_request -> socketserver.BaseServer.verify_request
+
+                # ----- Call `process_request` -----
+                socketserver.TCPServer.process_request -> socketserver.BaseServer.process_request
+
+                    # ----- Call `finish_request` -----
+                    socketserver.TCPServer.finish_request -> socketserver.BaseServer.finish_request
+
+                        # ----- Create `self.RequestHandlerClass` instance -----
+                        #
+                        # `self.RequestHandlerClass` is injected when calling
+                        # `socketserver.TCPServer.__init__`.
+                        #
+                        # The class constructor should take three arguments:
+                        # socket object, client address tuple, server object.
+                        #
+                        # `self.RequestHandlerClass` is `__main__.CustomHandler` in this example.
+                        #
+                        __main__.CustomHandler.__init__ -> socketserver.BaseRequestHandler.__init__
+
+                            # ----- Call `setup` -----
+                            __main__.CustomHandler.setup -> socketserver.StreamRequestHandler.setup
+
+                                # ----- Create input and output files from the client socket -----
+                                socket.socket.makefile
+
+                                    # ----- Wrap the client socket in SocketIO object -----
+                                    socket.SocketIO.__init__
+
+                            # ----- Call `handle` -----
+                            __main__.CustomHandler.handle
+
+                                # ----- Read data from client socket -----
+                                socket.SocketIO.readinto
+
+                                # ----- Write back to client socket -----
+                                socket.SocketIO.write
+
+                            # ----- Call `finish` -----
+                            __main__.CustomHandler.finish -> socketserver.StreamRequestHandler.finish
+
+                                # ----- Flush SocketIO -----
+                                socket.SocketIO.flush -> _io._IOBase.flush
+
+                                # ----- Close SocketIO -----
+                                socket.SocketIO.close
+
+                    # ----- Call `shutdown_request` -----
+                    socketserver.TCPServer.shutdown_request
+
+                        # ----- Send `SHUT_WR` to client -----
+                        socket.socket.shutdown -> _socket.socket.shutdown
+
+                        # ----- Call `close_request` -----
+                        socketserver.TCPServer.close_request
+
+                            # ----- Close socket -----
+                            socket.socket.close
