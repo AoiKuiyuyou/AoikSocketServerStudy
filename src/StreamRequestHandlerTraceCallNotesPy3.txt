@@ -1,7 +1,3 @@
-# This notes are based on Python 3's `socketserver` library.
-# The general procedure applies to Python 2's `SocketServer` library as well.
-
-
 # ----- Main function -----
 __main__.main
 
@@ -32,31 +28,21 @@ __main__.main
         # ----- Create selector -----
         selectors.SelectSelector.__init__
 
-        # ----- Register socket file to selector -----
-        #
-        # Notice `TCPServer` has `fileno` method, which will be called by the
-        # selector.
-        # ```
-        # def fileno(self):
-        #     return self.socket.fileno()
-        # ```
-        #
+        # ----- Register listening socket to selector -----
         selectors.SelectSelector.register
 
         # ----- Loop to poll listening socket's read event -----
         ```
         # Pseudo code
         while True:
-            ready = selector.select(timeout)
+            ready = select(timeout)
             if ready:
                 return self._handle_request_noblock()
         ```
 
-            # ----- Poll read event on the listening socket -----
-            #
-            # Notice only the listening socket is registered with the selector
-            # so when there is a read event it must be from the listening
-            # socket.
+            # ----- Poll listening socket's read event -----
+            # Only the listening socket is polled so when there is a read event
+            # it must be from the listening socket.
             #
             selectors.SelectSelector.select
 
@@ -67,10 +53,10 @@ __main__.main
                 # ----- Call `get_request` -----
                 socketserver.TCPServer.get_request
 
-                    # ----- Accept client socket FD and client address -----
+                    # ----- Accept the connecting socket -----
                     socket.socket.accept
 
-                        # ----- Wrap client socket FD in a socket object -----
+                        # ----- Wrap the accepted socket's file descriptor in a socket object -----
                         socket.socket.__init__
 
                 # ----- Call `verify_request` -----
@@ -83,52 +69,55 @@ __main__.main
                     socketserver.TCPServer.finish_request -> socketserver.BaseServer.finish_request
 
                         # ----- Create `self.RequestHandlerClass` instance -----
+                        # In this example, `self.RequestHandlerClass` is
+                        # `__main__.CustomRequestHandler`
                         #
-                        # `self.RequestHandlerClass` is injected when calling
-                        # `socketserver.TCPServer.__init__`.
-                        #
-                        # The class constructor should take three arguments:
-                        # socket object, client address tuple, server object.
-                        #
-                        # `self.RequestHandlerClass` is `__main__.CustomHandler` in this example.
-                        #
-                        __main__.CustomHandler.__init__ -> socketserver.BaseRequestHandler.__init__
+                        __main__.CustomRequestHandler.__init__ -> socketserver.BaseRequestHandler.__init__
 
                             # ----- Call `setup` -----
-                            __main__.CustomHandler.setup -> socketserver.StreamRequestHandler.setup
+                            __main__.CustomRequestHandler.setup -> socketserver.StreamRequestHandler.setup
 
-                                # ----- Create input and output files from the client socket -----
+                                # ----- Create input file from the socket -----
                                 socket.socket.makefile
 
-                                    # ----- Wrap the client socket in SocketIO object -----
+                                    # ----- Wrap the socket in `SocketIO` -----
+                                    socket.SocketIO.__init__
+
+                                # ----- Create output file from the socket -----
+                                socket.socket.makefile
+
+                                    # ----- Wrap the socket in `SocketIO` -----
                                     socket.SocketIO.__init__
 
                             # ----- Call `handle` -----
-                            __main__.CustomHandler.handle
+                            __main__.CustomRequestHandler.handle
 
-                                # ----- Read data from client socket -----
-                                socket.SocketIO.readinto
+                                # ----- Read request data -----
+                                socket.socket.recv -> _socket.socket.recv
 
-                                # ----- Write back to client socket -----
+                                # ----- Write response data -----
                                 socket.SocketIO.write
 
                             # ----- Call `finish` -----
-                            __main__.CustomHandler.finish -> socketserver.StreamRequestHandler.finish
+                            __main__.CustomRequestHandler.finish -> socketserver.StreamRequestHandler.finish
 
-                                # ----- Flush SocketIO -----
+                                # ----- Flush output `SocketIO` -----
                                 socket.SocketIO.flush -> _io._IOBase.flush
 
-                                # ----- Close SocketIO -----
+                                # ----- Close output `SocketIO` -----
+                                socket.SocketIO.close
+
+                                # ----- Close input `SocketIO` -----
                                 socket.SocketIO.close
 
                     # ----- Call `shutdown_request` -----
                     socketserver.TCPServer.shutdown_request
 
-                        # ----- Send `SHUT_WR` to client -----
+                        # ----- Close write channel -----
                         socket.socket.shutdown -> _socket.socket.shutdown
 
                         # ----- Call `close_request` -----
                         socketserver.TCPServer.close_request
 
-                            # ----- Close socket -----
+                            # ----- Close the socket -----
                             socket.socket.close
