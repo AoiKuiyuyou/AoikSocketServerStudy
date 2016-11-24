@@ -4,8 +4,8 @@ __main__.main
     # ----- Create `TCPServer` -----
     socketserver.TCPServer.__init__
 
-        # ----- Call super constructor -----
-        socketserver.TCPServer.__init__ -> socketserver.BaseServer.__init__
+        # ----- Call super method -----
+        socketserver.TCPServer -> socketserver.BaseServer.__init__
 
         # ----- Create socket -----
         socket.socket.__init__
@@ -13,17 +13,17 @@ __main__.main
         # ----- Call `server_bind` -----
         socketserver.TCPServer.server_bind
 
-            # ----- Bind socket to server address
-            socket.socket.bind -> _socket.socket.bind
+            # ----- Bind socket to server address -----
+            socket.socket -> _socket.socket.bind
 
         # ----- Call `server_activate` -----
         socketserver.TCPServer.server_activate
 
             # ----- Start listening -----
-            socket.socket.listen -> _socket.socket.listen
+            socket.socket -> _socket.socket.listen
 
     # ----- Call `serve_forever` -----
-    socketserver.TCPServer.serve_forever -> socketserver.BaseServer.serve_forever
+    socketserver.TCPServer -> socketserver.BaseServer.serve_forever
 
         # ----- Create selector -----
         selectors.SelectSelector.__init__
@@ -48,7 +48,7 @@ __main__.main
 
             # ----- Call `_handle_request_noblock` -----
             # When read event occurs, it means a client is connecting.
-            socketserver.TCPServer._handle_request_noblock -> socketserver.BaseServer._handle_request_noblock
+            socketserver.TCPServer -> socketserver.BaseServer._handle_request_noblock
 
                 # ----- Call `get_request` -----
                 socketserver.TCPServer.get_request
@@ -60,22 +60,19 @@ __main__.main
                         socket.socket.__init__
 
                 # ----- Call `verify_request` -----
-                socketserver.TCPServer.verify_request -> socketserver.BaseServer.verify_request
+                socketserver.TCPServer -> socketserver.BaseServer.verify_request
 
                 # ----- Call `process_request` -----
-                socketserver.TCPServer.process_request -> socketserver.BaseServer.process_request
+                socketserver.TCPServer -> socketserver.BaseServer.process_request
 
                     # ----- Call `finish_request` -----
-                    socketserver.TCPServer.finish_request -> socketserver.BaseServer.finish_request
+                    socketserver.TCPServer -> socketserver.BaseServer.finish_request
 
                         # ----- Create `self.RequestHandlerClass` instance -----
-                        # In this example, `self.RequestHandlerClass` is
-                        # `__main__.CustomRequestHandler`
-                        #
-                        __main__.CustomRequestHandler.__init__ -> socketserver.BaseRequestHandler.__init__
+                        __main__.CustomRequestHandler -> socketserver.BaseRequestHandler.__init__
 
                             # ----- Call `setup` -----
-                            __main__.CustomRequestHandler.setup -> socketserver.StreamRequestHandler.setup
+                            __main__.CustomRequestHandler -> socketserver.StreamRequestHandler.setup
 
                                 # ----- Create input file from the socket -----
                                 socket.socket.makefile
@@ -93,16 +90,16 @@ __main__.main
                             __main__.CustomRequestHandler.handle
 
                                 # ----- Read request data -----
-                                socket.socket.recv -> _socket.socket.recv
+                                socket.socket -> _socket.socket.recv
 
                                 # ----- Write response data -----
                                 socket.SocketIO.write
 
                             # ----- Call `finish` -----
-                            __main__.CustomRequestHandler.finish -> socketserver.StreamRequestHandler.finish
+                            __main__.CustomRequestHandler -> socketserver.StreamRequestHandler.finish
 
                                 # ----- Flush output `SocketIO` -----
-                                socket.SocketIO.flush -> _io._IOBase.flush
+                                socket.SocketIO -> _io._IOBase.flush
 
                                 # ----- Close output `SocketIO` -----
                                 socket.SocketIO.close
@@ -114,7 +111,7 @@ __main__.main
                     socketserver.TCPServer.shutdown_request
 
                         # ----- Close write channel -----
-                        socket.socket.shutdown -> _socket.socket.shutdown
+                        socket.socket -> _socket.socket.shutdown
 
                         # ----- Call `close_request` -----
                         socketserver.TCPServer.close_request
